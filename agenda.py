@@ -1,24 +1,31 @@
+from banco import sessao, motor, Base
+from clientes import Cliente
+
 class Agenda:
-    """Gerencia a lista de atendimentos do dia.""" 
+    """Classe responsável pela comunicação entre o Python e o SQLite."""
     
     def __init__(self):
-        self.lista_de_clientes = []
+        # Base.metadata cria o arquivo .db e as tabelas se não existirem
+        Base.metadata.create_all(motor)
 
-    def salvar(self, ficha_do_cliente):
-        """Adiciona um objeto cliente à lista de agendamentos."""
-        self.lista_de_clientes.append(ficha_do_cliente)
-        print(f"✅ Agendamento de {ficha_do_cliente.nome} salvo com sucesso!")
+    def salvar(self, ficha):
+        """Persiste os dados de um objeto Cliente no banco de dados."""
+        sessao.add(ficha)
+        sessao.commit()
+        print(f"✅ {ficha.nome} guardada no Banco de Dados!")
 
-    def cancelar(self, ficha_do_cliente):
-        """Remove um agendamento da lista, caso ele exista."""
-        if ficha_do_cliente in self.lista_de_clientes:
-            self.lista_de_clientes.remove(ficha_do_cliente)
-            print(f"❌ Agendamento de {ficha_do_cliente.nome} cancelado.")
-        else:
-            print("⚠️ Este cliente não está na agenda.")
-        
+    def cancelar(self, nome_cliente):
+        """Busca e remove um registro pelo nome."""
+        alvo = sessao.query(Cliente).filter_by(nome=nome_cliente).first()
+        if alvo:
+            sessao.delete(alvo)
+            sessao.commit()
+            print(f"❌ Agendamento de {nome_cliente} removido!")
+
     def exibir_tudo(self):
-        """Imprime o relatório formatado de todos os agendamentos."""
-        print("\n--- MEUS AGENDAMENTOS ---")
-        for f in self.lista_de_clientes:
-            print(f"{f.horario.strftime('%H:%M')} | {f.nome} | {f.procedimento} | R$ {f.aplicar_taxas():.2f} | {f.status}")
+        """Recupera todos os registros e exibe formatado."""
+        lista = sessao.query(Cliente).all()
+        print("\n--- RELATÓRIO DO BANCO DE DADOS ---")
+        for f in lista:
+            # Note que agora usamos o f.status e f.horario_str salvo
+            print(f"{f.horario_str} | {f.nome:10} | {f.procedimento:15} | {f.status}")

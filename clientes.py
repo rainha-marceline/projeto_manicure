@@ -1,42 +1,44 @@
-# clientes.py
-from datetime import time
-from config import TABELA_PRECOS
+from sqlalchemy import Column, Integer, String, Boolean
+from banco import Base
+from config import TABELA_PRECOS # Necessário para o cálculo
 
+class Cliente(Base):
+    """Classe base que mapeia a tabela 'clientes' no banco de dados."""
+    __tablename__ = 'clientes'
+    
+    id = Column(Integer, primary_key=True)
+    nome = Column(String)
+    horario_str = Column(String)
+    procedimento = Column(String)
+    pago = Column(Boolean, default=False)
 
-class Cliente:
-    """Representa um cliente comum do salão."""
-    def __init__(self, nome: str, horario: time, procedimento: str):
-        """Inicializa os dados do cliente e define o preço base."""
+    def __init__(self, nome, horario, procedimento):
+        """Inicializa o cliente e prepara os dados para o banco."""
         self.nome = nome
-        self.horario = horario
+        self.horario_str = str(horario)
         self.procedimento = procedimento
-        self._pago = False
-        # Busca o valor numérico na tabela, padrão 0 se não encontrado
+        # Definimos o preco_base buscando na tabela de configuração
         self.preco_base = TABELA_PRECOS.get(procedimento.lower(), 0)
         
     def aplicar_taxas(self):
-        """Retorna o valor final. Pode ser sobrescrito por subclasses."""
+        """Retorna o valor final (Polimorfismo)."""
         return self.preco_base
     
     def confirmar_pagamento(self):
-        """Altera o status de pagamento para concluído."""
-        self._pago = True
+        """Atualiza o status de pagamento."""
+        self.pago = True
 
     @property
     def status(self):
-        """Retorna uma representação visual do status de pagamento."""
-        return "✅ Pago" if self._pago else "❌ Pendente"
+        """Retorna um ícone visual baseado no valor booleano do banco."""
+        return "✅ Pago" if self.pago else "❌ Pendente"
 
 class ClienteVIP(Cliente):
-    """Cliente com benefícios especiais (Ex: Descontos)."""
-    
+    """Subclasse que aplica 10% de desconto via Polimorfismo."""
     def aplicar_taxas(self):
-        """Polimorfismo: Aplica 10% de desconto sobre o preço base."""
         return self.preco_base * 0.90
 
 class ClienteUrgente(Cliente):
-    """Cliente que requer atendimento imediato com taxa extra."""
-    
+    """Subclasse que aplica taxa de R$ 15,00 via Polimorfismo."""
     def aplicar_taxas(self):
-        """Polimorfismo: Aplica taxa adicional de R$ 15,00."""
         return self.preco_base + 15.00
